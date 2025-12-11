@@ -3,7 +3,7 @@ const TRACK_WIDTH = 10;
 const INITIAL_SPEED = 0.5;
 let score = 0;
 let coins = 0;
-let isGameOver = false;
+let isGameOver = true; // IMPORTANT: Set to true initially to prevent collision check before initialization
 
 // Player state
 const player = {
@@ -15,7 +15,7 @@ const player = {
     jumpVelocity: 0,
     isJumping: false,
     gravity: -0.05,
-    initialY: 0.5 // Resting Y position for the sled
+    initialY: 0.5 
 };
 
 // --- THREE.JS VARIABLES ---
@@ -26,9 +26,9 @@ let keys = {};
 // --- CORE FUNCTIONS ---
 
 function init3D() {
-    // 1. Scene Setup: Clear, bright sky
+    // 1. Scene Setup
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87CEEB); // Sky Blue
+    scene.background = new THREE.Color(0x87CEEB); 
 
     // 2. Camera: Fixed perspective looking down the path
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -50,27 +50,28 @@ function init3D() {
     createSled();
     scene.add(pathGroup);
     
-    // Initial segment of the track
-    createPathSegment(0, 50);
-
-    // 6. Event Listeners (Add Spacebar for Jump)
+    // 6. Event Listeners 
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('resize', onWindowResize, false);
+    
+    // Start game for the first time
+    resetGame();
+    animate();
 }
 
 function createSled() {
-    // Simple block/capsule shape to represent the sled/rider
     const sledGeometry = new THREE.BoxGeometry(2, 0.5, 3); 
-    const sledMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 }); // Brown sled
+    const sledMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 }); 
     sled = new THREE.Mesh(sledGeometry, sledMaterial);
     sled.position.set(0, player.initialY, 0);
     scene.add(sled);
 }
 
-function createPathSegment(zStart, length, isGap = false) {
+// All segment and obstacle creation functions remain the same (omitted for brevity)
+function createPathSegment(zStart, length, isGap = false) { 
+    // ... (Code from previous response) ...
     if (isGap) {
-        // A gap is just empty space, no geometry needed
         return; 
     }
     
@@ -81,7 +82,7 @@ function createPathSegment(zStart, length, isGap = false) {
     segment.position.set(0, 0, zStart - length / 2);
     pathGroup.add(segment);
     
-    // Add fence/boundary visualization (simplistic)
+    // Fence/boundary visualization (simplistic)
     const fenceMat = new THREE.MeshBasicMaterial({ color: 0x909090 });
     const fenceGeo = new THREE.BoxGeometry(0.2, 1, length);
     
@@ -93,7 +94,6 @@ function createPathSegment(zStart, length, isGap = false) {
     fenceRight.position.set(TRACK_WIDTH / 2, 0.5, zStart - length / 2);
     pathGroup.add(fenceRight);
 
-    // Optional: Add some random obstacles to this segment
     if (Math.random() > 0.6) {
         createObstaclesOnSegment(zStart, length);
     }
@@ -105,7 +105,6 @@ function createObstaclesOnSegment(zStart, length) {
         const x = THREE.MathUtils.randFloat(-TRACK_WIDTH / 2 + 1, TRACK_WIDTH / 2 - 1);
         const z = THREE.MathUtils.randFloat(zStart - length, zStart);
         
-        // Simple obstacle: Small box
         const obsGeo = new THREE.BoxGeometry(1, 1, 1);
         const obsMat = new THREE.MeshPhongMaterial({ color: 0x808080 });
         const obstacle = new THREE.Mesh(obsGeo, obsMat);
@@ -115,16 +114,53 @@ function createObstaclesOnSegment(zStart, length) {
 }
 
 
-// --- GAME LOOP & UPDATES ---
+// --- GAME MANAGEMENT FUNCTIONS ---
 
-let lastPathZ = 50; // Z coordinate of the end of the last path segment
+let lastPathZ = 50; 
+
+/**
+ * Resets all game state variables and UI elements.
+ */
+function resetGame() {
+    // Reset core variables
+    score = 0;
+    coins = 0;
+    isGameOver = false;
+    lastPathZ = 50; 
+
+    // Reset player state
+    sled.position.set(0, player.initialY, 0);
+    sled.material.color.setHex(0x8B4513); // Reset sled color
+    player.lateralVelocity = 0;
+    player.jumpVelocity = 0;
+    player.isJumping = false;
+
+    // Reset UI
+    document.getElementById('status').innerText = "Status: Go!";
+    document.getElementById('status').style.color = "yellow";
+    document.getElementById('restartButton').style.display = "none";
+    
+    updateScoreDisplay();
+
+    // Clear and rebuild the path
+    while(pathGroup.children.length > 0){
+        pathGroup.remove(pathGroup.children[0]);
+    }
+    createPathSegment(0, 50); // Create a safe starting segment
+}
+
+/**
+ * Called when the player clicks the restart button.
+ */
+function restartGame() {
+    // The animate loop is still running, so we just reset the state
+    resetGame();
+}
+
 
 function spawnPath() {
-    // Continually generate new path segments ahead of the player
     while (lastPathZ < sled.position.z + 100) {
         const segmentLength = THREE.MathUtils.randFloat(20, 40);
-        
-        // Randomly decide if the segment is a gap or a solid track
         const isGap = Math.random() < 0.2; 
         
         createPathSegment(lastPathZ, segmentLength, isGap);
@@ -135,7 +171,7 @@ function spawnPath() {
 function updateMovement() {
     if (isGameOver) return;
 
-    // Apply horizontal steering input
+    // ... (Movement logic from previous response) ...
     if (keys['KeyA'] || keys['ArrowLeft']) {
         player.lateralVelocity -= player.steeringPower;
     }
@@ -143,15 +179,12 @@ function updateMovement() {
         player.lateralVelocity += player.steeringPower;
     }
 
-    // Apply lateral friction and clamp velocity
     player.lateralVelocity *= player.lateralFriction;
     player.lateralVelocity = THREE.MathUtils.clamp(player.lateralVelocity, -player.maxLateralSpeed, player.maxLateralSpeed);
 
-    // Horizontal position update
     sled.position.x += player.lateralVelocity;
     sled.position.x = THREE.MathUtils.clamp(sled.position.x, -TRACK_WIDTH / 2, TRACK_WIDTH / 2);
     
-    // Jump/Gravity mechanics
     if (keys['Space'] && !player.isJumping) {
         player.jumpVelocity = 0.8; 
         player.isJumping = true;
@@ -168,24 +201,20 @@ function updateMovement() {
         }
     }
     
-    // Forward movement (Player is static, the world moves towards the player)
     pathGroup.position.z += player.speed;
-    
-    // Update score based on time/distance survived
     score += player.speed * 0.1;
 }
 
 function checkCollisions() {
-    if (isGameOver) return;
+    // CRITICAL FIX: Don't run collision check until the path has been built
+    if (isGameOver || pathGroup.children.length === 0) return; 
 
-    // AABB (Axis-Aligned Bounding Box) for collision checking
     const sledBox = new THREE.Box3().setFromObject(sled);
     const sledWorldPosition = new THREE.Vector3();
     sled.getWorldPosition(sledWorldPosition);
 
     let onTrack = false;
 
-    // Check against path segments and obstacles
     pathGroup.children.forEach(obj => {
         const objBox = new THREE.Box3().setFromObject(obj);
         
@@ -202,15 +231,16 @@ function checkCollisions() {
             isGameOver = true;
             document.getElementById('status').innerText = "Crashed into an obstacle!";
             document.getElementById('status').style.color = "red";
+            document.getElementById('restartButton').style.display = "block"; // Show restart button
         }
     });
     
-    // Check if player is falling in a gap and is not currently jumping high enough
-    if (!onTrack && sled.position.y <= player.initialY) {
+    // Check if player is falling in a gap
+    if (!onTrack && sled.position.y <= player.initialY && !player.isJumping) {
         isGameOver = true;
         document.getElementById('status').innerText = "Fell into a gap!";
         document.getElementById('status').style.color = "red";
-        // Simple visual for falling
+        document.getElementById('restartButton').style.display = "block"; // Show restart button
         sled.material.color.setHex(0xff0000); 
     }
 
@@ -224,7 +254,6 @@ function checkCollisions() {
 function updateScoreDisplay() {
     document.getElementById('scoreDisplay').innerText = score.toFixed(0);
     document.getElementById('speedDisplay').innerText = (player.speed * 10).toFixed(1);
-    // You'd also update a coin display here
 }
 
 // --- ANIMATION LOOP ---
@@ -243,7 +272,6 @@ function animate() {
 }
 
 // --- EVENT HANDLERS ---
-
 function onKeyDown(event) {
     keys[event.code] = true;
 }
@@ -260,4 +288,3 @@ function onWindowResize() {
 
 // --- START GAME ---
 init3D();
-animate();
