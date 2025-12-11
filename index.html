@@ -10,10 +10,14 @@
 <body>
     <div id="ui-overlay">
         <h1>SnowRider 3D</h1>
-        <p>Score: <span id="scoreDisplay">0</span>m</p>
+        <p>Score: <span id="scoreDisplay">0</span></p>
         <p>Speed: <span id="speedDisplay">0</span> km/h</p>
-        <p class="controls">Controls: **A** / **D** or **Left** / **Right** to steer.</p>
+        <p class="controls">Controls: **A** / **D** or **Left** / **Right**, **Space** to jump.</p>
         <div id="status" style="color: yellow;">Status: Ready</div>
+        
+        <button id="restartButton" onclick="restartGame()" style="display:none; margin-top: 10px;">
+            Restart Game
+        </button>
     </div>
     
     <script src="script.js"></script>
