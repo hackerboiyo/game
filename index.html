@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Clicker Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    
+    <div id="ui-overlay">
+        <h1>3D Clicker Tycoon</h1>
+        <p>Money: $<span id="moneyDisplay">0</span></p>
+        <p>Money Per Click (M/PC): <span id="mPCDisplay">1</span></p>
+
+        <hr>
+
+        <h2>Shop</h2>
+        <p>Multiplier Level: <span id="multiplierLevel">0</span></p>
+        <button onclick="buyMultiplier()">
+            Buy Multiplier (+1 M/PC) - Cost: $<span id="multiplierCost">10</span>
+        </button>
+        
+        <hr>
+
+        <h2>Target: Click the Rotating Sphere!</h2>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
